@@ -1,0 +1,27 @@
+\chapter{TỔNG QUAN} \label{chapter:Introduction}
+
+\section{Đối tượng nghiên cứu}
+
+Các bài toán đa thành phần liên quan đến nhiều thành phần tương tác và phổ biến trong các tình huống thực tế, như định tuyến xe có ràng buộc về tải trọng \cite{doi:10.1287/trsc.1060.0165} hoặc tối ưu hóa việc sử dụng vật liệu trong lịch trình sản xuất \cite{10.1007/978-3-642-21827-9_23}. Những vấn đề này tạo thách thức do sự phụ thuộc lẫn nhau giữa các thành phần và thường liên quan đến các nhiệm vụ tối ưu hóa NP-Hard như đóng gói, lập lịch và định tuyến \cite{Bonyadi2019}. Bài toán Người Thu Thập Du Lịch (Thief Traveling Problem, TTP) \cite{6557681} là một vấn đề đa thành phần đặc trưng kết hợp bài toán Ba Lô (Knapsack Problem, KP) và bài toán Người Bán Hàng Du Lịch (Traveling Salesman Problem, TSP).
+
+Trong công trình này, chúng tôi giải quyết bài toán Điều Hướng Thu Thập (Thief Orienteering Problem, ThOP) \cite{8477853}, một vấn đề đa thành phần được biến thể từ TTP với các tương tác và ràng buộc mới. ThOP kết hợp bài toán Điều hướng (Orienteering Problem, OP) \cite{OP} và KP. Mục tiêu là tìm một tuyến đường từ thành phố xuất phát đến thành phố đích (thành phần OP) sao cho tối đa hóa tổng lợi nhuận của các vật phẩm được thu thập (thành phần KP), đồng thời tuân thủ giới hạn sức chứa của ba lô và giới hạn thời gian di chuyển. ThOP được lấy cảm hứng từ TTP và xem xét các tình huống thực tế nơi người thu thập không cần phải ghé thăm tất cả các thành phố và tương tác được xác định bởi thời gian và giới hạn của ba lô. Vấn đề này được ứng dụng trong logistics ngược (reverse logistics) \cite{8477853}, nơi công ty cần thu nhận hàng hóa từ khách hàng, mỗi món hàng mang lại lợi ích cụ thể, dưới sự giới hạn của khả năng chở hàng và giờ làm việc của tài xế.
+
+\section{Phạm vi nghiên cứu}
+
+Chúng tôi tập trung nghiên cứu các giải pháp với hướng tiếp cận heuristic, metaheuristic cho ThOP. Các thuật toán heuristic giúp ta đạt được kết quả tương đối tốt với chi phí thời gian chấp nhận được. Chúng trái ngược với các phương pháp chính xác (exact methods), cái mà sẽ đảm bảo tìm được lời giải tối ưu. Đối với bài toán NP-Hard như ThOP, thời gian chạy cần thiết của phương pháp chính xác sẽ tăng nhanh chóng với kích thước của bài toán dẫn đến không khả thi để ứng dụng vào thực tế. Do đó, nghiên cứu giải pháp heuristic sẽ có tính ứng dụng cao hơn.
+
+Bên cạnh hướng tiếp cận thuật toán, chúng tôi đã tiến hành thực nghiệm trên Bộ trường hợp đánh giá do Santos và Chagas thiết kế \cite{8477853} khi giới thiệu ThOP. Nó bao gồm 432 thể hiện của bài toán Điều Hướng Thu Thập với đa dạng về số lượng thành phố, số lượng vật phẩm, kích thước ba lô, thời gian di chuyển tối đa và sự tương quan giữa trọng lượng và lợi nhuận của các vật phẩm. 
+
+\section{Các công trình liên quan}
+
+Các công trước đây cho ThOP đa dạng về hướng tiếp cận. Một phương pháp chính xác Lập Trình Phi Tuyến Tính Hỗn Hợp (Mixed Integer Non-Linear Programming, MINLP) \cite{8477853}. Một phương pháp tìm kiếm cục bộ Tìm Kiếm Cục Bộ Tuần Tự (Iterated Local Search, ILS) \cite{8477853}. Hai phương pháp thuật giải di truyền Thuật Giải Di Truyền Điểm Thiên Lệch Ngẫu Nhiên (Biased Random-Key Genetic Algorithm, BRKGA) \cite{8477853}, Thuật Giải Di Truyền (Genetic Algorithm, GA) \cite{9185848}. Một phương pháp thông minh bầy đàn Giải Thuật Tối Ưu Hóa Đàn Kiến (Ant Colony Optimization, ACO) \cite{CHAGAS2020708}. Và sự kết hợp giữa thông minh bầy đàn và tìm kiếm cục bộ ACO++ \cite{Chagas2021}. 
+
+Chagas và Wagner \cite{Chagas2021} đã chỉ ra rằng ACO++ vượt trội hơn so với các thuật toán khác trong hơn 90\% số lượng trường hợp (trường hợp đánh giá). Để đạt được những kết quả xuất sắc này, ACO++ trải qua quá trình điều chỉnh chi tiết để xác định cấu hình siêu tham số phù hợp cho mỗi nhóm trường hợp trong benchmark (bộ đánh giá) của ThOP.
+
+\section{Mục đích nghiên cứu}
+
+Trong công trình này, chúng tôi đề xuất một thuật toán cải tiến dựa trên ACO++, Giải Thuật Đàn Kiến Tự Thích Ứng (Self-Adaptive Ant System, SAAS) có khả năng điều chỉnh động các tham số của mình theo đặc trưng của mỗi trường hợp và quá trình tìm kiếm. Sự cải tiến này giúp giảm thiểu tính tốn thời gian và phi thực tế của việc điều chỉnh nhiều cấu hình siêu tham số. Thuật toán của chúng tôi sử dụng một cấu hình duy nhất cho toàn bộ trường hợp trong ThOP benchmark, đồng thời mang lại hiệu suất vượt trội.
+
+Đề cải tiến, chúng tôi tích hợp bốn kỹ thuật vào ACO++. Hai cơ chế kiểm soát tham số, tự thích ứng (self-adaptive) và thích ứng (adaptive), giúp cải thiện khả năng thích nghi của thuật toán. Hai kỹ thuật Bay hơi lười biếng và Phân cụm thứ bậc giúp giảm độ phức tạp về thời gian.
+
+Cơ chế tự thích ứng sử dụng chiến lược tiến hóa (Evolution Strategy, ES), trong khi đó cơ chế thích ứng sử dụng thông tin sự đa dạng lợi nhuận để điều chỉnh các tham số (Bảng \ref{tab:control_param}). Các tham số được điều chỉnh đồng thời với quá trình tìm kiếm lời giải. Phân cụm phân cấp được sử dụng để giảm chi phí xây dựng các tuyến đường. Bay hơi lười biếng được sử dụng để giảm thời gian cần thiết để bay hơi dấu vết pheromone của kiến.

@@ -1,0 +1,202 @@
+\chapter{THUẬT TOÁN ĐỀ XUẤT} \label{chapter:OurProposed}
+
+Trong chương này, chúng tôi sẽ trình bày chi tiết về thuật toán mà chúng tôi đã đề xuất để giải quyết bài toán điều hướng thu thập (ThOP). Mục tiêu của thuật toán là đạt được hiệu suất cao và đồng thời có khả năng tự động thích ứng với các tham số mà không làm tăng độ phức tạp của thuật toán.
+
+\section{Tổng quan thuật toán} \label{section:OverallAlgo}
+
+\begin{figure}
+    \centering
+    \includesvg[inkscapelatex=false, width=\columnwidth]{Figures/SAAS-HC-v3.svg}
+    \caption[Các cải tiến của SAAS so với ACO++.]{Các cải tiến của SAAS so với ACO++. Trong đó, \textcolor{blue}{màu xanh dương} thể hiện thành phần \textbf{mới}, \textcolor{green}{màu xanh lá} thể hiện sự \textbf{điều chỉnh} thành phần cũ và màu trắng thể hiện sự giữ nguyên thành phần cũ.}
+    \label{fig:saas_flowchart}
+\end{figure}
+
+Thuật toán của chúng tôi được phát triển dựa trên nền tảng của thuật toán ACO++ đã được giới thiệu trước đó. Như chúng tôi đã mô tả trong phần kiến thức nền tảng, ACO++ là một biến thể của giải thuật đàn kiến MAX-MIN Ant System (MMAS). Tuy nhiên, một trong nhược điểm của ACO++ là yêu cầu sự đặt trước các siêu tham số trước khi thực hiện thuật toán. Điều này tạo ra một thách thức do ảnh hưởng lớn của các siêu tham số đối với kết quả của thuật toán.
+
+Để khắc phục hạn chế này, chúng tôi đã thực hiện hai phương pháp. Đầu tiên, chúng tôi đã cải tiến thuật toán để tự động thích ứng các tham số trong quá trình hoạt động. Thứ hai, chúng tôi đã áp dụng hai kỹ thuật nhằm giảm độ phức tạp của thuật toán, từ đó nâng cao khả năng tìm kiếm lời giải tốt cho bài toán ThOP. Hình \ref{fig:saas_flowchart} cho thấy bức tranh toàn cảnh về các cải tiến của SAAS so với ACO++. Trong đó, màu xanh dương thể hiện thành phần mới, màu xanh lá thể hiện sự điều chỉnh thành phần cũ và màu trắng thể hiện sự giữ nguyên thành phần cũ. Mã giả của thuật toán được trình bày chi tiết trong Giải Thuật \ref{algo:SAAS}.
+
+\begin{algorithm}
+\caption{Thuật toán SAAS cho bài toán ThOP}
+\label{algo:SAAS}
+\algorithmfootnote{$\zeta(\pi)$ bỏ đi các thành phố không có vật phẩm được thu tập từ chiến lược thu thập $z$ từ $\pi$.}
+$\pi^{best} \gets \varnothing, z^{best} \gets \varnothing $\; \label{SAAS:initsolution}
+khởi tạo CMA-ES\; \label{SAAS:initES}
+xây dựng cây cụm thứ bậc\; \label{SAAS:init_trees}
+\Repeat{Điều kiện dừng được thỏa mãn} { \label{SAAS:mainloopstart}
+    pop $\gets$ lấy mẫu một quần thể từ CMA-ES\; \label{SAAS:sampleSE}
+    \ForEach{indv $\in$ pop}{ \label{SAAS:indvstart}
+        $\alpha,\beta,\theta,\delta,\gamma,\rho_{\text{min}},\rho_{\text{max}}$ $\gets$ indv.genome\;\label{SAAS:genome}
+        cập nhật $\rho$\ bằng phương trình \ref{eq:AACO-NC:adaptrho}\; 
+        \label{SAAS:adapt_rho}
+        % $\Pi \gets$ construct $n_{\text{indv}}$ routes using ants\; \label{SAAS:eachant}
+        % \ForEach{route $\pi \in \Pi $}{ \label{SAAS:eachroute}
+        \For{$i:= 1\ \textbf{to}\ n_{\text{indv}}$}{ \label{SAAS:eachant}
+            $\pi \gets$ xây dựng tuyến đường bằng một con kiến\; \label{SAAS:conroute}
+            $\pi' \gets$  thực hiện tìm kiếm địa phương trên tuyến đường $\pi$\; \label{SAAS:localsearch}
+            $z \gets$ xây dựng chiến lược thu thập cho $\pi$\; \label{SAAS:packing}
+            $z' \gets$ xây dựng chiến lược thu thập cho $\pi'$\; \label{SAAS:newpacking}
+            \If{giá trị lợi nhuận của $z'$ cao hơn giá trị lợi nhuận của $z$}{ \label{SAAS:comaparecurrent}
+                $\pi \gets \pi', z \gets z' $\; \label{SAAS:replacecurrent}
+            }
+            
+            \If{giá trị lợi nhuận của $z$ cao hơn giá trị lợi nhuận của $z^{best}$}{ \label{SAAS:comaparebest}
+                $\pi^{best} \gets \zeta(\pi), z^{best} \gets z $\; \label{SAAS:replacebest}
+            }\label{SAAS:comaparebestend}
+        }
+
+        indv.fitness $\gets$ giá trị lợi nhuận cao nhất trong các lời giải của quần thể\; \label{SAAS:indvfitness}
+    } \label{SAAS:indvend}
+
+    cập nhật tham số của CMA-ES \; \label{SAAS:updateES}
+    \If{điều kiện khởi động lại CMA-ES được thỏa mãn}{ \label{SAAS:checkES} 
+        khởi động lại CMA-ES\; \label{SAAS:restartES}
+    }
+    tính giá trị độ đa dạng lợi nhuận bằng công thức \ref{eq:entropy} và \ref{eq:entropy_prob}\; \label{SAAS:entropy}
+    cập nhật $n_{\text{indv}}$ bằng công thức \ref{eq:adaptants}\; \label{SAAS:adapt_n_ant}
+    cập nhật dấu vết của pheromone và số liệu của MMAS\; \label{SAAS:updatepheromone} 
+}\label{SAAS:mainloopend}
+\Return{$\pi^{best}, z^{best}$}\; \label{SAAS:return}
+\end{algorithm}
+
+Khi bắt đầu, thuật toán khởi tạo lời giải tốt nhất bằng một lời giải trống với một tuyến đường và một chiến lược thu thập (dòng \ref{SAAS:initsolution}). Các tham số của cơ chế tự thích ứng của CMA-ES cũng được khởi tạo (dòng \ref{SAAS:initES}). Đồng thời các cây cụm thứ bậc cho từng thành phố cũng được khởi tạo (dòng \ref{SAAS:init_trees}). Theo sau đó thuật toán vào vòng lặp chính (dòng \ref{SAAS:mainloopstart}), và vòng lặp này tiếp tục lặp lại cho đến khi điều kiện kết thúc được thỏa mãn (dòng \ref{SAAS:mainloopend}). Điều kiện để kết thúc vòng lặp là khi thời gian thuật toán tìm kiếm vượt quá thời gian giới hạn của trường hợp đang xét.
+
+Tại vòng lặp chính (dòng \ref{SAAS:mainloopstart} đến dòng \ref{SAAS:mainloopend}), đầu tiên thuật toán lấy mẫu một quần thể từ cơ chế tự thích ứng của CMA-ES (dòng \ref{SAAS:sampleSE}). Với mỗi cá thể trong quần thể vừa được lấy mẫu (từ dòng \ref{SAAS:indvstart} đến dòng \ref{SAAS:indvend}), một tập con của đàn kiến tìm kiếm một tập các lời giải bằng cách sử dụng các tham số được lấy từ thông tin của mỗi cá thể (dòng \ref{SAAS:genome}). 
+
+Với mỗi con kiến tập con đó (dòng \ref{SAAS:eachant}), nó sẽ khám phá ra một tuyến đường $\pi$ dựa trên thông tin dấu vết pheromone (dòng \ref{SAAS:conroute}. Sau đó thuật toán tạo ra một tuyến đường khác $\pi^{'}$ từ tuyền đường vừa tìm được với con kiến với độ dài được thử để giảm quãng đường bằng phương pháp tìm kiếm địa phương 2-OPT\cite{Crama1995}. Tiếp theo, thuật toán sử dụng phương pháp thu thập vật phẩm để sinh ra chiến lược thu tập cho hai tuyền đường đó (dòng \ref{SAAS:packing} và \ref{SAAS:newpacking}). Nếu lợi nhuận của chiến lược thu thập của tuyến đường đường cải thiện $\pi^{'}$ tốt hơn tuyến đường gốc $\pi^{'}$ thì thay thế tuyến đường gốc và chiến lược thu thập bằng tuyến đường được cải thiện và chiến lược thu thập của nó (dòng \ref{SAAS:comaparecurrent}). Sau đó cập nhật lời giải tốt nhất bằng cách so sánh với lời giải hiện tại (dòng \ref{SAAS:comaparebest}).
+
+Phương pháp thu thập vật phẩm của thuật toán chúng tôi giống với phương pháp được sử dụng trong thuật toán ACO++\cite{Chagas2021}. Tuy nhiên chúng tôi đã chỉnh sửa các giá trị tham số của $\theta$, $\delta$, và $\gamma$ không cần phải sinh bằng hàm ngẫu nhiên đồng nhất mà lấy từ thông tin của mỗi cá thể. Vậy nên thuật toán chúng tôi chỉ gọi hàm sinh ra chiến lược thu thập vật phẩm này một lần thay vì nhiều lần như thuật toán ACO++. Bởi vì CMA-ES của thuật toán chúng tôi có khả năng tự học để cải thiện các tham số này qua các cá thể của quần thể, trong khi trong thuật toán ACO++ cần gọi nhiều lần để tăng khả năng hàm sinh giá trị ngẫu nhiên sinh ra các giá trị tham số $\theta$, $\delta$, và $\gamma$ tốt cho phương pháp thu thập tham lam.
+
+Giá trị sinh tồn của mỗi cá thể (giá trị indv.fitness) được quyết định bằng giá trị lợi nhuận (giá trị hàm mục tiêu) cao nhất của tập đàn kiến con sử dụng thông tin di truyền của nó để sinh ra các lời giải (dòng \ref{SAAS:indvfitness}). Khi tất cả các cá thể trong quần thể của CMA-ES đã tính xong giá trị sinh tồn của chúng, cơ chế tự thích ứng CMA-ES sử dụng các thông tin này để cập nhật học và cập nhật các tham số của nó để ở vòng lặp tiếp theo cơ chế sẽ sinh ra quần thể có các cá thể tốt hơn (dòng \ref{SAAS:updateES}). Nếu các tham số của CMA-ES chạm điều kiện khởi động lại thì cơ chế tự thích ứng CMA-ES sẽ khởi tạo lại các tham số của nó (dòng \ref{SAAS:restartES}). Chi tiết về cách cơ chế tự thích ứng CMA-ES hoạt động được trình bày ở phần \ref{section:CMAES}. 
+
+Thuật toán sau đó tính giá trị đa dạng lợi nhuận của đàn kiến (Line \ref{SAAS:entropy}) của cơ chế thích ứng để điều chỉnh số lượng kiến ở trong mỗi đàn kiến con và giá trị bay hơi của pheromone (dòng \ref{SAAS:adapt_rho}). Chi tiết về cơ chế thích ứng này được trình bày ở phần \ref{section:ProfitAdaptive}. Ở cuối mỗi vòng lặp chính, thuật toán cập nhật dấu vết pheromone and các số liệu của phương pháp MMAS (dòng \ref{SAAS:updatepheromone}).
+
+Lưu ý rằng chúng tôi đã thay thế cơ chế bay hơi của MMAS bằng cơ chế bay hơi lười biến ở những lúc thuật toán sử dụng thông tin dấu vết bay hơi (dòng \ref{SAAS:eachant} và dòng \ref{SAAS:updatepheromone}). Cơ chế bay hơi lười biến được trình bày chi tiết ở phần \ref{section:LazyEvaporation}. Ngoài ra khi mỗi con kiến tìm tuyến đường di chuyển (dòng \ref{SAAS:eachant}), đàn kiến trong giải thuật của chúng tôi di chuyển trên các cạnh của cây cụm thứ bậc, thay vì di chuyển trên các cạnh nối giữa các thành phố. Các thông tin dấu vết pheromone cũng được lưu và cập nhật trên các cạnh của cây. Mô tả và cách hoạt động của Kiến di chuyển trên cây cụm thứ bậc được trình bày ở phần \ref{section:AntTraversalClusterTrees}
+
+Thuật toán sẽ tiếp tục lặp lại vòng lặp chính để cải thiện lời giải tốt nhất và giá trị của các tham số cho đên khi điều kiện dừng được thỏa mãn. Sau khi kết thúc vòng lặp chính thuật toán của chúng tôi trả về lời giải hiệu quả bao gồm tuyến đường cùng với chiến lược thu thập vật phẩm.
+
+
+\section{Tận dụng thông tin sự đa dạng lợi nhuận cho cơ chế thích ứng}\label{section:ProfitAdaptive}
+
+Cơ chế kiểm soát tham số đầu tiên chúng tôi cài đặt trong SAAS là cơ chế dựa trên giá trị lợi nhuận của các lời giải được tìm bởi đàn kiến. Cơ chế này được chúng tôi dựa vào cơ chế thích nghi của thuật toán AACO-NC\cite{STODOLA2022101056}, được trình bày ở phần \ref{section:AdaptivePheromoneRate}. Cơ chế của chúng tôi khác với của thuật toán AACO-NC ở hai điểm. Thứ nhất, cơ chế của chúng tôi thích ứng không chỉ tham số tốc độ bay hơi pheromone $\rho$ mà còn cho lượng kiến cho mỗi cá thể $n_{indv}$ của quần thể CMA-ES. Cũng giống như tham số $\rho$, số lượng kiến cho mỗi cá thể $n_{indv}$ đóng vai trò quan trọng việc cân bằng giữa khám phá và khai phá không gian tìm kiếm của thuật toán. 
+
+Điểm khác biệt thứ hai là cơ chế của chúng tôi sử dụng giá trị lợi nhuận của các lời giải được tìm bởi đàn kiến ở vòng lặp hiện tại để thích ứng hai tham số trên. Khác với thuật toán AACO-NC giải quyết bài toán TSP, độ đa dạng của đàn kiến thể hiện qua sự khác nhau giữa các cạnh trong chu trình của lời giải, bài toán ThOP bao gồm hai cần tuyến đường và chiến lược thu thập nên chúng tôi chọn giá trị lợi nhuận của mỗi lời giải để tính độ đa dạng bởi vì nó đại diện cho cả hai thành phần này. Bởi vì sự khác biệt này nên chúng tôi đã chỉnh sửa lại các công thức của thuật toán AACO-NC.
+
+
+Ở cuối mỗi vòng lặp chính, thuật toán của chúng tôi sẽ tính thông tin sự đa dạng lợi nhuận entropy $H$ bằng các lời giải trong đàn kiến bằng công thức Shannon entropy dưới đây:
+
+\begin{equation}\label{eq:entropy}
+\begin{split}
+    S &= \{P\  |\ \text{$P$ là giá trị lợi nhuận của một lời giải được tìm thấy bởi đàn kiến hiện tại}\} ,\\
+    H &= -\sum_{i=1}^{|S|} p_{i} \cdot \log_2 p_{i}
+\end{split}
+\end{equation}
+
+Trong đó $p_{i}$ là xác suất của giá trị $P_i$, giá trị lợi nhuận thứ $i$ trong tập giá trị lợi nhuận $S$ được tìm thấy bởi đàn kiến. Xác suất này là tần suất xuất hiện của giá trị lợi nhuận $P_i$ trong tập lời giải được tìm bời đàn kiến:
+\begin{equation}\label{eq:entropy_prob}
+    p_{i} = \frac{\text{\# số lần xuất hiện}(P_{i})}{n_{\text{ants}}}
+\end{equation}
+
+Trong đó $n_{\text{ants}}$ là số con kiến trong đàn. Phạm vi giá trị entropy được giới hạn bởi $H_{\text{min}}$ và $H_{\text{max}}$:
+\begin{equation}\label{eq:limit_entropy}
+   H_{\text{min}} = -\log_2\frac{n_{\text{ants}}}{n_{\text{ants}}} = 0, \quad
+   H_{\text{max}} = -\log_2\frac{1}{n_{\text{ants}}} .
+\end{equation}
+
+Tỷ lệ bay hơi pheromone $\rho$ được điều chỉnh theo công thức \ref{eq:AACO-NC:adaptrho} của thuật toán AACO-NC được trình bày ở phần \ref{section:AdaptivePheromoneRate}. Tương tự, với số lượng kiến mỗi cho cá thể $n_{indv}$ chúng tôi sử dụng một phiên bản sửa đổi của công thức \ref{eq:AACO-NC:adaptrho}:
+
+\begin{equation} \label{eq:adaptants}
+    n_{\text{indv}} = n_{\text{indv\_max}} - (n_{\text{indv\_max}} - n_{\text{indv\_min}}) \cdot \frac{H - H_{\text{min}}}{H_{\text{max}} - H_{\text{min}}}.
+\end{equation}
+
+Ở đây, số lượng kiến được gán cho mỗi cá thể, ký hiệu là $n_{\text{indv}}$, là cố định cho tất cả các cá thể. $n_{\text{indv\_max}}$ và $n_{\text{indv\_min}}$ là là  tham số đại diện cho giới hạn lớn nhất và nhỏ nhất của số lượng kiến cho mỗi cá thể. Khác với tham số tốc độ bay hơi $\rho$, giá trị của $n_{\text{indv}}$ tăng khi sự đa dạng lợi nhuận thấp để khuyến khích khám phá và giảm khi đa dạng cao để tăng cường khai phá không gian tìm kiếm. Sự tích hợp thông tin sự đa dạng lợi nhuận cải thiện chiến lược thích ứng, tạo ra sự cân bằng giữa khám phá và khai thác.
+
+\section{Cơ chế tự thích ứng sử dụng CMA-ES}\label{section:CMAES}
+
+Thuật toán ACO++ được tác giả điều chỉnh các siêu tham số riêng cho từng nhóm trường hợp để cải thiện tính ổn định của hiệu suất thuật toán. Chúng tôi đề xuất tích hợp một cơ chế tự thích ứng để điều chỉnh các tham số trong quá trình tìm kiếm lời giải của thuật toán. Một số tham số có thể tự thích ứng được liệt kê trong bảng \ref{tab:control_param}. Cơ chế này cho phép các tham số thích nghi với đặc điểm riêng biệt của trường hợp và quá trình tìm kiếm.
+
+\begin{table}[ht!]
+    \begin{center}
+        \begin{tabular}{lcl}
+            \toprule
+            Tham số            &   Cơ chế kiểm soát tham số  & Khoảng giá trị \\
+            \midrule
+            $\alpha$                    &   Tự thích ứng   & [0, 1]\\
+            $\beta$                     &   Tự thích ứng  & [0, 1]     \\
+            $\rho_{\text{min}}$, $\rho_{\text{max}}$  &   Tự thích ứng & [0, 1] \\
+            $\theta$                    &   Tự thích ứng & [0, 1]             \\
+            $\delta$                    &   Tự thích ứng & [0, 1]             \\
+            $\gamma$                    &   Tự thích ứng & [0, 1]             \\
+            $n_{\text{indv}}$           &   Thích ứng       & [$n_{\text{indv\_max}}$, $n_{\text{indv\_min}}$]  \\
+            $\rho$                      &   Thích ứng         & [$\rho_{\text{min}}, \rho_\text{{max}}$] \\
+            \bottomrule
+        \end{tabular}
+        \caption[Danh sách các tham số được kiểm soát bằng các kỹ thuật kiểm soát tham số]{\label{tab:control_param}Danh sách các tham số được kiểm soát bằng hai kỹ thuật kiểm soát tham số tự thích ứng và thích ứng}
+    \end{center}
+\end{table}
+
+Tham số $\alpha$ và $\beta$ là hai tham số kiểm soát tính quan trọng của nồng độ pheromone và thông tin heuristic trong công thức tính xác suất di chuyển (công thức \ref{eq:ACOpheromone}). Tham số $\rho_{\text{min}}$ và $\rho_{\text{max}}$ là các tham số thể hiện cận trên là cận dưới cho tham số tốc độ bay hơi $\rho$, giúp cho cơ chế kiểm soát tham số thích ứng mà chúng tôi đã trình bày ở phần \ref{section:ProfitAdaptive}. Các tham số $\theta$, $\delta$, và $\gamma$, là các tham số điều chỉnh mức độ ảnh hưởng của các giá trị lợi nhuận, trọng lượng và khoảng cách trong công thức tính điểm của vật phẩm trong phương pháp thu thập heuristic (Công thức \ref{eq:itemScore}). Thuật toán CMA-ES sẽ kiểm soát các giá trị của tham số này qua một phân mối chuẩn đa biến. Phân phối chuẩn này được khởi tạo qua các giá trị trung tậm mặc định và giá trị bước nhảy mặc định cho từng tham số.
+
+Trong phương pháp SAAS, chúng tôi sử dụng thuật toán CMA-ES để làm cơ chế tự thích ứng. Ở đầu mỗi lần lặp chính (Dòng \ref{SAAS:mainloopstart} đến Dòng \ref{SAAS:mainloopend}), một quần thể các bộ tham số được lấy mẫu từ CMA-ES. Sau đó, đối với mỗi cá thể trong quần thể này, một nhóm kiến con sẽ sử dụng các tham số đã được mã hóa trên cá thể đó để xây dựng các lời giải. Giá trị sinh tồn của mỗi cá thể được xác định bằng giá trị lợi nhuận cao nhất đạt được trong nhóm kiến con tương ứng của  cá thể đó. Sau khi giá trị sinh tồn cho tất cả các cá thể đã được tính, thuật toán CMA-ES sẽ điều chỉnh phân phối của nó để cái thiện khả năng sinh ra các cá thể tốt hơn ở dựa theo các bộ tham số có khả năng đạt được giá trị lợi nhuận cao hơn.
+
+Để tránh thuật toán bị kẹt trong cực trị địa phương hoặc quá trình tìm kiếm không hiệu quả, chúng tôi đã cài đặt cơ chế khởi động lại cho CMA-ES, cơ chế mà sẽ gán lại phân phối của CMA-ES. Cơ chế này được kích hoạt khi mà giá trị bước nhảy trở nên quá nhỏ (đã hội tụ vào một cực trị địa phương) hoặc trở nên quá lớn vượt quá giới hạn của không gian tìm kiếm (quá trình tìm kiếm không hiệu quả).
+
+\section{Kiến di chuyển trên cây cụm thứ bậc}\label{section:AntTraversalClusterTrees}
+Với giải thuật đàn kiến thông thường, khi kiến cân nhắc di chuyển đến thành phố tiếp theo, chúng ta cần xem xét $n$ thành phố và tính xác suất dịch chuyển. Cách thức này có độ phức tạp về thời gian là $O(n)$. Nhận thấy kĩ thuật từ AACO-NC \cite{STODOLA2022101056} giúp giảm chi ở quá trình này. Cụ thể như sau, nếu ta cluster $n$ thành phố thành $k$ cụm, khi chọn thành phố tiếp theo, ta sẽ chọn cụm trước, rồi mới cân nhắc $n_\mathrm{size}$ thành phố trong cụm đó. Kĩ thuật này đã giúp giảm độ phức tạp xuống còn $O(k + n_\mathrm{size})$.
+
+Khi được biết qua kĩ thuật trên, chúng tôi nhận thấy rằng nếu ta có thể giảm chi phí chọn thành phố bằng cách phân cụm chúng, vậy thì, tương tự, ta cũng có thể giảm chi phí chọn cụm bằng cách phân cụm chúng lần nữa và nhiều lần nữa. Chúng tôi quyết định xây dựng cây cụm thứ bậc, nơi mà các nút con là các cụm được phân cụm từ nút ba mẹ. Nút gốc đại diện cho một cụm chứa tất cả thành phố, các nút lá đại diện cho các cụm chứa đúng một thành phố. Bằng cách duyệt cây từ gốc đến lá, ở mỗi nút, kiến sẽ cân nhắc $k$ cụm (nút) con, khi ấy chi phí chọn thành phố tiếp theo sẽ là $\Theta(k \cdot \log_{k} n)$.
+
+Để tìm ra giá trị $k$ mang lại chi phí thấp nhất, chúng tôi gọi
+\begin{align*}
+    f(k) &= k \cdot \log_{k} n \\
+    &= \ln n \cdot \frac{k}{\ln k}
+\end{align*}
+và tiến hành tìm cực trị của hàm f:
+\begin{align*}
+    &\text{Xét } f'(k) = 0 \\
+    \Leftrightarrow& \ln n \cdot \frac{\ln k -1 }{\ln^2  k} = 0\\
+    \Rightarrow& \ln k - 1 = 0 \\
+    \Leftrightarrow&\ k = \mathrm{e}.
+\end{align*}
+\begin{figure}
+    \centering
+    \includesvg[inkscapelatex=false, width=0.75\columnwidth]{Figures/k_value.svg} \\
+    \caption{Ảnh hưởng của $k$ đến chi phí chọn thành phố tiếp theo.}
+    \label{fig:k_value}
+\end{figure}
+Nhìn hình \ref{fig:k_value}, ta có thể thấy 2 và 3 là hai giá trị nguyên gần với e nhất và $f(3) < f(2)$. Do đó chọn $k$ bằng 3 sẽ mang lại chi phí tốt nhất. Tuy vậy, trong quá trình thực nghiệm, chúng tôi đã chọn $k$ bằng 2. Khi giá trị $k$ được cố định, độ phức tạp về thời gian của việc chọn thành phố tiếp theo sẽ là $\Theta(\log n).$
+
+Chúng tôi xác định sáu đặc trưng cho mỗi thành phố để tiến hành phân cụm. Các đặc trưng bao gồm toạ độ x, tọa độ y của thành phố, khoảng tin cậy  của trọng lượng và lợi nhuận của các vật phẩm thuộc thành phố. Thông tin về trọng lượng và lợi nhuận sẽ có khoảng tin cậy riêng và mỗi khoảng tin cậy tương ứng với 2 đặc trưng. Cụ thể, đầu tiên, ta tính giá trị trung bình mean và độ lệch chuẩn std từ các vật phẩm trong thành phố. Sau đó, ta chọn biên dưới $\mathrm{mean} - 2 \cdot \mathrm{std}$ và biên trên $\mathrm{mean} + 2 \cdot \mathrm{std}$ của khoảng tin cậy để làm đặc trưng. Việc thêm thông tin vật phẩm vào đặc trưng giúp ta phân cụm các thành phố có cùng phân bố vật phẩm. Từ đó giúp đàn kiến khám phá các thành phố lân cận hiệu quả hơn.
+
+Thành phố bắt đầu là nơi chỉ có thể rời khỏi, không thể đi tới, do đó, nó không cần thêm vào cây cụm thứ bậc. Mặt khác, thành phố kết thúc, nơi mà không có vật phẩm nào, nghĩa là nó không thể có đặc trưng cho vật phẩm, do đó nó cần được phân cụm theo cách riêng. Cụ thể, ở lớp đầu tiên ngay dưới nút gốc, ta thủ công phân cụm thành phố kết thúc thành một cụm riêng và các thành phố còn lại thành một cụm. Đối với các thành phố khác, chúng tôi sử dụng phương pháp phân cụm thứ bậc phân chia (divisive hierarchical clustering) với K-Means làm phương pháp tách (Hình \ref{fig:hc_k-means}) để xây dựng cấu trúc cây.
+\begin{figure}
+    \centering
+    \includesvg[inkscapelatex=false, width=1\columnwidth]{Figures/HC_K-Means.svg} \\
+    \caption{Phân cụm thứ bậc phân chia (divisive hierarchical clustering) với K-Means làm phương pháp tách.}
+    \label{fig:hc_k-means}
+\end{figure}
+
+Thuật toán phân cụm này là một cách hiệu quả để xây dựng cấu trúc cây cụm thứ bậc. Độ phức tạp về thời gian của phân cụm K-Means là $O(n \cdot t \cdot k \cdot d)$, trong đó $n$ là số lượng thành phố (hay số điểm dữ liệu) cần phân cụm, $t$ là số vòng lặp trong quá trình phân cụm, $k$ thể hiện số cụm và d thể hiện số đặc trưng của thành phố (hay số chiều của điểm dữ liệu). Giữa lớp của cây, mặc dù có số lượng nút khác nhau, và mỗi nút đại diện cho một lượng thành phố khác nhau, nhưng trong một lớp, tổng số thành phố không thể vượt quá $n$. Do đó, việc áp dụng K-Means tại một lớp của cậy để tạo ra một lớp mới sẽ tốn tổng chi phí là $O(n \cdot t \cdot k \cdot d)$. Vì mỗi nút có k nút con, nên cây có trung bình $\log_k n$ lớp, chi phí của thuật toán sẽ là $\Theta(\log_k n \cdot n \cdot t \cdot k \cdot d)$. Do $k$ và $d$ sẽ được mang giá trị cố định và không có liên hệ đến input, độ phức tạp về thời gian của việc xây dựng cấu trúc cây là $\Theta(n \cdot \log n \cdot t)$.
+
+Trong phương pháp của chúng tôi, kiến sẽ di chuyển qua cây cụm thứ bậc thay vì di chuyển trực tiếp từ thành phố này sang thành phố khác. Mỗi thành phố có cây cụm thứ bậc riêng thể hiện các cạnh đi đến n thành phố và có chung một cấu trúc. Việc có cấu trúc cây giống hệt nhau ở mọi thành phố cho phép thuật toán đánh dấu hiệu quả thành phố nào đã được được đi qua.
+
+Ngược lại với AACO-NC, chúng tôi sử dụng pheromone và heuristic riêng biệt cho các cạnh của cây để tính toán xác suất chuyển đổi. Heuristic của một cạnh trên cây được định nghĩa là khoảng cách từ thành phố hiện tại đến tọa độ trọng tâm của cụm đích.
+
+Trong các cây không cân bằng, lá ở độ sâu nông hơn thường có xác suất được chọn cao hơn. Để giải quyết vấn đề này, chúng tôi điều chỉnh trọng số chuyển đổi đến một nút con bằng cách nhân nó với số lượng lá dưới nút con đó. Điều này có nghĩa là trọng số chuyển đổi sang một nút, lúc này, mang tính đại diện cho tổng trọng số chuyển đổi đến các lá của nó.
+
+\section{Bay hơi lười biếng}\label{section:LazyEvaporation}
+
+Ở các giải thuật đàn kiến khác, việc bay hơi pheromone thường được thực hiện bằng cách duyệt qua từng cạnh trên bản đồ và nhân nồng độ pheromone của cạnh với $(1-\rho)$, mang độ phức tạp thời gian $O(n^2)$. Cách này tương đối lãng phí bởi vì phần lớn các cạnh ít khi được kiến đi qua, ta điều chỉnh dấu vết pheromone mà chưa thực sự dùng đến. Để khắc phục nhược điểm trên, chúng tôi đề xuất kỹ thuật Bay hơi lười biếng giúp thuật toán đạt được hiệu quả bay hơi tương tự với độ phức tạp thấp hơn. Bay hơi lười biếng giảm độ phức tạp bằng cách trì hoãn cập nhật các vết pheromone chưa dùng đến.
+
+Nguyên tắc cốt lõi của bay hơi lười biếng là theo dõi trạng thái mong muốn và trạng thái lịch sử. Trạng thái mong muốn bao gồm hai biến DECount và DRCount. DECount theo dõi số lần bay hơi (mong muốn) kể từ lần cuối (mong muốn) khởi tạo lại pheromone. DRCount theo dõi số lần (mong muốn) khởi tạo lại pheromone kề từ lúc thuật toán bắt đầu. Ứng với mỗi cạnh là một trạng thái lịch sử riêng, bao gồm $\tau_{\text{historical}}$, HECount và HRCount. $\tau_{\text{historical}}$ là nồng độ pheromone lịch sử của cạnh tương ứng tại thời điểm HECount và HRCount. HRCount ghi nhận số lần $\tau_{\text{historical}}$ đã khởi tạo lại. HECount ghi nhận số lần $\tau_{\text{historical}}$ đã bay hơi kể từ lần khởi tạo lại pheromone thứ HRCount.
+
+Bằng cách so sánh trạng thái lịch sử và trạng thái mong muốn, chúng ta có thể xác định nồng độ pheromone mong muốn $\tau_{\text{desired}}$ cho các cạnh cần dùng đến. Nếu HRCount nhỏ hơn DRCount, có nghĩa là cạnh chưa được cập nhật kể từ lần khởi tạo lại pheromone trước đó, vì vậy thuật toán sẽ đặt lại $\tau_{\text{historical}}$ bằng pheromone khởi tạo lại. Sau đó, $\tau_{\text{historical}}$ của cạnh được bay hơi (DECount - HECount) lần:
+\begin{equation} \label{eq:lazy_evap}
+    \tau_{\text{desired}} \gets \tau_{\text{historical}} \cdot (1 - \rho) ^ {\text{DECount} - \text{HECount}}.
+\end{equation}
+
+Bay hơi lười biếng trì hoãn điều chỉnh nồng độ pheromone khi giải thuật đàn kiến có mong muốn thực hiện bay hơi hoặc khởi tạo lại, thay vào đó, ta cập nhật trạng thái mong muốn. Trước khi tính xác suất chuyển tiếp, Bay hơi lười biếng sẽ khôi phục $\tau_{\text{desired}}$ bằng cách quan sát trạng thái mong muốn và trạng thái lịch sử. Khi cần rải thêm pheromone, ta đồng bộ trạng thái lịch sử với trạng thái mong muốn và cộng thêm lượng pheromone mới (Công thức \ref{eq:lazy_deposit}). Phương thức này giúp giảm độ phức tạp của quá trình bay hơi và khởi tạo lại pheromone xuống tương đương với chi phí chọn đường đi và rải thêm pheromone.
+\begin{equation} \label{eq:lazy_deposit}
+    \tau_{\text{historical}} \gets \tau_{\text{desired}} + \Delta\tau.
+\end{equation}
+
+Tương tự, ở đầu giai đoạn tìm đường, ta cũng có thể dùng kỹ thuật lười biếng này để giảm chi phí khởi tạo lại trạng thái chưa đi qua của các thành phố.

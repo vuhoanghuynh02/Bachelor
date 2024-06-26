@@ -1,0 +1,173 @@
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+\documentclass[
+12pt, % The default document font size, options: 10pt, 11pt, 12pt
+oneside, % Two side (alternating margins) for binding by default, uncomment to switch to one side
+english, % ngerman for German
+onehalfspacing, % Single line spacing, alternatives: onehalfspacing or doublespacing
+%draft, % Uncomment to enable draft mode (no pictures, no links, overfull hboxes indicated)
+% nolistspacing, % If the document is onehalfspacing or doublespacing, uncomment this to set spacing in lists to single
+%liststotoc, % Uncomment to add the list of figures/tables/etc to the table of contents
+%toctotoc, % Uncomment to add the main table of contents to the table of contents
+%parskip, % Uncomment to add space between paragraphs
+%nohyperref, % Uncomment to not load the hyperref package
+headsepline, % Uncomment to get a line under the header
+% chapterinoneline, % Uncomment to place the chapter title next to the number on one line 
+%consistentlayout, % Uncomment to change the layout of the declaration, abstract and acknowledgements pages to match the default layout
+]{MastersDoctoralThesis}
+\usepackage[utf8]{vietnam}
+\usepackage[utf8]{inputenc} % Required for inputting international characters
+\usepackage[T1, T5]{fontenc} % Output font encoding for international characters
+\usepackage{hyperref}
+
+\usepackage{mathpazo} % Use the Palatino font by default
+\usepackage{amsmath}
+\usepackage{amsthm}
+
+\usepackage[backend=bibtex,style=numeric,natbib=true]{biblatex} % Use the bibtex backend with the authoryear citation style (which resembles APA)
+\usepackage[autostyle=true]{csquotes} % Required to generate language-dependent quotes in the bibliography
+\addbibresource{bibliography.bib} % The filename of the bibliography
+
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage{listings}
+\usepackage{bbding}
+\usepackage{pifont}
+\usepackage{wasysym}
+\usepackage{amssymb}
+\usepackage{adjustbox}
+\usepackage[final]{pdfpages}
+% \usepackage{algorithm} 
+\usepackage[noend]{algpseudocode}
+\usepackage{adjustbox}
+\usepackage{subcaption}
+\usepackage{rotating}
+\usepackage{svg}
+
+\usepackage{fontspec}
+\setmainfont{Times New Roman}
+\renewcommand{\normalsize}{\fontsize{13pt}{18pt}\selectfont}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Định nghĩa}
+
+
+%----------------------------------------------------------------------------------------
+%	MARGIN SETTINGS
+%----------------------------------------------------------------------------------------
+\lstset{frame=tb,
+  language=Python,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+\geometry{
+	paper=a4paper, % Change to letterpaper for US letter
+	%inner=2.5cm, % Inner margin
+	%outer=3.8cm, % Outer margin
+    % bindingoffset=.5cm, % Binding offset
+	left=3.5cm,
+	right=2.0cm,
+	top=3cm, % Top margin
+	bottom=3.5cm
+}
+
+%----ALGORITHM
+\usepackage[ruled,linesnumbered]{algorithm2e}
+\usepackage[hang,flushmargin]{footmisc}
+\usepackage{lipsum}
+\makeatletter
+\newcommand{\algorithmfootnote}[2][\footnotesize]{%
+  \let\old@algocf@finish\@algocf@finish% Store algorithm finish macro
+  \def\@algocf@finish{\old@algocf@finish% Update finish macro to insert "footnote"
+    \leavevmode\rlap{\begin{minipage}{\linewidth}
+    #1#2
+    \end{minipage}}%
+  }%
+}
+
+\begin{document}
+\frontmatter % Use roman page numbering style (i, ii, iii, iv...) for the pre-content pages
+
+\pagestyle{plain} % Default to the plain heading style until the thesis style is called for the body content
+%--------------------------------
+
+%	TITLE PAGE
+\includepdf[pages=-, scale=1]{TrangBia.pdf}
+\includepdf[pages=-, scale=1]{TrangBia2.pdf}
+\includepdf[pages=-, scale=1]{DSHoiDong.pdf}
+\includepdf[pages=-, scale=1]{NhanXetVaDeCuong.pdf}
+\cleardoublepage
+%--------------------------------
+
+%	ACKNOWLEDGEMENTS
+\include{Structures/Acknowledgments}
+%--------------------------------
+
+%	LIST OF CONTENTS/FIGURES/TABLES PAGES
+\include{Structures/List_of_Contents}
+\include{Structures/List_of_Figures}
+\include{Structures/List_of_Tables}
+%--------------------------------
+
+%	ABBREVIATIONS
+\include{Structures/Abbreviations}
+%--------------------------------
+
+%	ABSTRACT
+\include{Structures/Abstract}
+%--------------------------------
+
+%	THESIS CONTENT - CHAPTERS
+\mainmatter % Begin numeric (1,2,3...) page numbering
+
+\pagestyle{thesis} % Return the page headers back to the "thesis" style
+\def\vec#1{\mathchoice{\mbox{\boldmath$\displaystyle#1$}}
+{\mbox{\boldmath$\textstyle#1$}}
+{\mbox{\boldmath$\scriptstyle#1$}}
+{\mbox{\boldmath$\scriptscriptstyle#1$}}}
+\renewcommand{\chaptername}{Chương}
+\renewcommand{\figurename}{Hình}
+\renewcommand{\tablename}{Bảng}
+\renewcommand{\bibname}{TÀI LIỆU THAM KHẢO}
+\makeatletter
+% \renewcommand*{\ALG@name}{Thuật giải}
+\renewcommand{\algorithmcfname}{Giải thuật}
+\makeatother
+\include{Structures/Chapters/Introduction}
+\include{Structures/Chapters/BasedKnowledge}
+\include{Structures/Chapters/OurProposed}
+\include{Structures/Chapters/Experiments} 
+\include{Structures/Chapters/Conclusion}
+
+%----------------------------------------------------------------------------------------
+%	THESIS CONTENT - APPENDICES
+%----------------------------------------------------------------------------------------
+
+% \appendix % Cue to tell LaTeX that the following "chapters" are Appendices
+
+% Include the appendices of the thesis as separate files from the Appendices folder
+% Uncomment the lines as you write the Appendices
+
+%\include{Appendices/AppendixA}
+%\include{Appendices/AppendixB}
+%\include{Appendices/AppendixC}
+
+%----------------------------------------------------------------------------------------
+%	BIBLIOGRAPHY
+\addchaptertocentry{\bibname}
+\printbibliography
+%----------------------------------------------------------------------------------------
+\end{document}  
